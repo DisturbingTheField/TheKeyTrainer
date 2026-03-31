@@ -64,7 +64,7 @@
 
 
         #key-display {
-            font-size: 8rem; 
+            font-size: 5rem; 
             transition: all 0.2s ease;
         }
 
@@ -148,7 +148,7 @@
             margin: 10px 0;
         }
 
-        input[type="range"] { width: 60%; }
+        input[type="range"] { width: 50%; }
         input[type="number"], select {
             padding: 8px;
             border-radius: 4px;
@@ -198,8 +198,8 @@
             <div class="control-group">
                 <h3>Metronom</h3>
                 <div class="row">
-                    <button id="metro-toggle" style="width: 100px;">ON/OFF</button>
-                    <input type="range" id="metro-bpm" min="60" max="240" value="120">
+                    <button id="metro-toggle" style="width: 80px;">ON/OFF</button>
+                    <input type="range" id="metro-bpm" min="40" max="240" value="120">
                     <span id="bpm-val" style="min-width: 60px;">120 BPM</span>
                 </div>
                 <div class="row">
@@ -251,8 +251,8 @@
                     <label>Font size:</label>
                     <select id="font-size-ctrl">
                         <option value="3rem">Small</option>
-                        <option value="5rem">Medium</option>
-                        <option value="7rem" selected>Large</option>
+                        <option value="5rem" selected>Medium</option>
+                        <option value="7rem">Large</option>
                         <option value="10rem">X-Large</option>
                     </select>
                 </div>
@@ -418,58 +418,8 @@ function playChangeSignal() {
 
 
 
-        /*
-        function updateDisplay() {
-            const showNext = document.getElementById('show-next-check').checked;
-            const playMode = document.getElementById('play-mode').value;
-            
-            currentKeyEl.innerText = currentPlaylist[currentIndex];
-            
-            if (showNext && currentIndex + 1 < currentPlaylist.length) {
-                nextKeyEl.innerText = "Next: " + currentPlaylist[currentIndex + 1];
-            } else if (showNext && currentIndex + 1 >= currentPlaylist.length) {
-                // Vis "New Loop" kun hvis vi faktisk teller runder (Automatic)
-                nextKeyEl.innerText = (playMode === 'manual') ? "Next: New round" : "Next: (New Loop)";
-            } else {
-                nextKeyEl.innerText = "";
-            }
-        }
-        */
 
 
-        /*
-        function updateDisplay() {
-            const showNext = document.getElementById('show-next-check').checked;
-            const playMode = document.getElementById('play-mode').value;
-            const maxLoops = parseInt(document.getElementById('loop-count').value);
-            
-            currentKeyEl.innerText = currentPlaylist[currentIndex];
-            
-            if (!showNext) {
-                nextKeyEl.innerText = "";
-                return;
-            }
-
-            // Hvis det er flere toner igjen i nåværende loop
-            if (currentIndex + 1 < currentPlaylist.length) {
-                nextKeyEl.innerText = "Next: " + currentPlaylist[currentIndex + 1];
-            } 
-            // Hvis vi er på siste tone i en loop
-            else {
-                if (playMode === 'manual') {
-                    nextKeyEl.innerText = "Next: New round";
-                } else {
-                    // Sjekk om dette er den aller siste loopen
-                    // (maxLoops !== 0 betyr at vi ikke kjører evig)
-                    if (maxLoops !== 0 && (currentLoopCount + 1) >= maxLoops) {
-                        nextKeyEl.innerText = "Next: (Done)";
-                    } else {
-                        nextKeyEl.innerText = "Next: (New Loop)";
-                    }
-                }
-            }
-        }
-        */
 
 
 
