@@ -1,0 +1,634 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE KEY TRAINER</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #e74c3c;
+            --bg: #121212;
+            --display-bg: #1a1a1a;
+            --display-text: #00ff41;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            color: #333;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 800px;
+            background: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 2.4rem;
+            text-align: center;
+            color: var(--primary);
+            margin: 0 0 20px 0;
+            letter-spacing: 2px;
+        }
+
+        /* Display Seksjon */
+        .display-area {
+            text-align: center;
+            background: var(--display-bg);
+            color: var(--display-text);
+            padding: 40px 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            min-height: 180px;
+            height: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;  /* Holder alt inni boksen */
+            word-wrap: break-word; /* Knekker ord hvis de blir ekstremt lange */
+        }
+
+
+        #key-display {
+            font-size: 8rem; 
+            transition: all 0.2s ease;
+        }
+
+        #current-key {
+            display: block;
+            font-weight: bold;
+            line-height: 1.1;
+            font-size: 1em; /* Dette betyr 100% av valgt størrelse */
+        }
+
+        #next-key-preview {
+            display: block;
+            font-size: 0.4em; /* Dette betyr 60% av valgt størrelse. Juster opp/ned etter ønske */
+            color: #008800;
+            margin-top: 10px;
+            min-height: 1.2em;
+        }
+
+        .progress-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--accent);
+            /* transition: width 0.1s linear; */
+        }
+
+        /* Kontroller */
+        .main-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 15px 10px;
+            cursor: pointer;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: opacity 0.2s;
+        }
+
+        button:active { opacity: 0.7; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        #start-btn { background: #27ae60; grid-column: span 2; }
+        #stop-btn { background: var(--accent); }
+        #next-btn { background: #3498db; }
+
+        hr { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
+
+        .control-group { margin: 15px 0; }
+        .control-group h3 { font-size: 0.9rem; color: #777; margin-bottom: 10px; text-transform: uppercase; }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        input[type="range"] { width: 60%; }
+        input[type="number"], select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        label { font-size: 0.95rem; display: flex; align-items: center; gap: 5px; }
+
+        .metro-active {
+            background: #f39c12 !important;
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>THE KEY TRAINER</h1>
+        </header>
+
+        <section class="display-area">
+            <div id="key-display">
+                <span id="current-key">READY</span>
+                <span id="next-key-preview"></span>
+            </div>
+            <div class="progress-container">
+                <div id="progress-bar"></div>
+            </div>
+        </section>
+
+        <section class="controls">
+            <div class="main-buttons">
+                <button id="start-btn">START LOOP</button>
+                <button id="pause-btn">PAUSE</button>
+                <button id="stop-btn">STOPP</button>
+                <button id="next-btn">NEXT KEY</button>
+            </div>
+
+            <hr>
+
+            <div class="control-group">
+                <h3>Metronom</h3>
+                <div class="row">
+                    <button id="metro-toggle" style="width: 100px;">ON/OFF</button>
+                    <input type="range" id="metro-bpm" min="60" max="240" value="120">
+                    <span id="bpm-val" style="min-width: 60px;">120 BPM</span>
+                </div>
+                <div class="row">
+                    <label>Volume:</label>
+                    <input type="range" id="metro-vol" min="0" max="100" value="50">
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="control-group">
+                <h3>Settings</h3>
+                
+                <div class="checkbox-grid">
+                    <label><input type="checkbox" checked disabled> Key (Always)</label>
+                    <label><input type="checkbox" checked id="check-major"> Major</label>
+                    <label><input type="checkbox" id="check-minor"> Minor</label>
+                    <label><input type="checkbox" id="check-dom"> Dominant</label>
+                </div>
+
+                <div class="row">
+                    <label>Symbols:</label>
+                    <select id="accidental-mode">
+                        <option value="sharp"  selected>Only # (Sharp)</option>
+                        <option value="flat">Only b (Flat)</option>
+                        <option value="both">Both (Random)</option>
+                    </select>
+                </div>
+
+                <div class="row">
+                    <label>Modus:</label>
+                    <select id="play-mode">
+                        <option value="auto">Automatic change</option>
+                        <option value="manual">Manual change</option>
+                    </select>
+                </div>
+
+                <div class="row">
+                    <label>Seconds pr Key:</label>
+                    <input type="number" id="key-duration" min="1" max="300" value="30" style="width: 60px;">
+                </div>
+
+                <div class="row">
+                    <label>Loops (12 keys per selected type maj,min,dom) (0 = infinite):</label>
+                    <input type="number" id="loop-count" min="0" max="100" value="2" style="width: 60px;">
+                </div>
+
+                <div class="row">
+                    <label>Font size:</label>
+                    <select id="font-size-ctrl">
+                        <option value="3rem">Small</option>
+                        <option value="5rem">Medium</option>
+                        <option value="7rem" selected>Large</option>
+                        <option value="10rem">X-Large</option>
+                    </select>
+                </div>
+
+                <div class="row">
+                    <label><input type="checkbox" id="show-next-check" checked> Show next key</label>
+                </div>
+                <div class="row">
+                    <label><input type="checkbox" id="check-signal" checked> Signal on key change</label>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Data
+        const SHARPS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const FLATS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+        // Tilstand
+        let audioCtx = null;
+        let metroInterval = null;
+        let keyTimeout = null;
+        let progressInterval = null;
+        let currentPlaylist = [];
+        let currentIndex = 0;
+        let isPaused = false;
+        let currentLoopCount = 0;
+        let startTime = 0;
+        let remainingTime = 0;
+
+        // DOM Elementer
+        const currentKeyEl = document.getElementById('current-key');
+        const keyDisplayArea = document.getElementById('key-display');
+        const nextKeyEl = document.getElementById('next-key-preview');
+        const progressBar = document.getElementById('progress-bar');
+        const metroBtn = document.getElementById('metro-toggle');
+
+
+
+
+        // NOTE! Google Chrome may give warning or no sound if HTML file in run from local disk, run app from GitHub URL or edit Google Chrome settings to enable audio from local HTML file
+        // Metronom lyd (Sinuskurve 30ms)
+        function playTick() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const vol = document.getElementById('metro-vol').value / 100;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1000, audioCtx.currentTime); // Høyere tone for tydelighet
+            
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.03);
+        }
+
+
+
+function playChangeSignal() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const vol = document.getElementById('metro-vol').value / 100;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'sine';
+    // 1200 Hz er litt lysere enn metronomen (1000 Hz)
+    osc.frequency.setValueAtTime(1200, audioCtx.currentTime); 
+    
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    // Lydvarighet på 0.5 sekund (500ms) for å skille den fra metronomen
+    gain.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.5);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
+}
+
+
+        function generateLoop() {
+            let keysInLoop = [];
+            const accMode = document.getElementById('accidental-mode').value;
+            const useMajor = document.getElementById('check-major').checked;
+            const useMinor = document.getElementById('check-minor').checked;
+            const useDom = document.getElementById('check-dom').checked;
+
+            // Sjekk om brukeren har valgt MINST én variant
+            const anyVariantSelected = useMajor || useMinor || useDom;
+
+            for (let i = 0; i < 12; i++) {
+                let note = "";
+                if (accMode === 'sharp') note = SHARPS[i];
+                else if (accMode === 'flat') note = FLATS[i];
+                else note = Math.random() > 0.5 ? SHARPS[i] : FLATS[i];
+
+                if (!anyVariantSelected) {
+                    // Hvis ingenting er valgt, vis kun ren note (f.eks. "C")
+                    keysInLoop.push(note);
+                } else {
+                    // Hvis varianter er valgt, legg kun til de som er krysset av
+                    if (useMajor) keysInLoop.push(note + " Maj");
+                    if (useMinor) keysInLoop.push(note + " Min");
+                    if (useDom) keysInLoop.push(note + " Dom");
+                }
+            }
+            
+            // Stokker om rekkefølgen (Fisher-Yates)
+            for (let i = keysInLoop.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [keysInLoop[i], keysInLoop[j]] = [keysInLoop[j], keysInLoop[i]];
+            }
+            return keysInLoop;
+        }
+
+
+
+
+        function updateDisplay() {
+            const showNext = document.getElementById('show-next-check').checked;
+            const playMode = document.getElementById('play-mode').value;
+            const maxLoops = parseInt(document.getElementById('loop-count').value);
+            
+            // 1. Vis nåværende tone
+            currentKeyEl.innerText = currentPlaylist[currentIndex];
+            
+            if (!showNext) {
+                nextKeyEl.innerText = "";
+                return;
+            }
+
+            // 2. Sjekk om det finnes en neste tone i listen (currentIndex går fra 0 til 11)
+            if (currentIndex + 1 < currentPlaylist.length) {
+                nextKeyEl.innerText = "Next: " + currentPlaylist[currentIndex + 1];
+            } 
+            // 3. Hvis vi er på den aller siste tonen (nr. 12)
+            else {
+                if (playMode === 'manual') {
+                    // I manuell modus vet vi ikke når brukeren vil stoppe, 
+                    // så vi varsler at neste klikk starter en helt ny runde.
+                    nextKeyEl.innerText = "Next: (New round)";
+                } else {
+                    // I auto-modus sjekker vi om dette er den siste planlagte loopen
+                    if (maxLoops !== 0 && (currentLoopCount + 1) >= maxLoops) {
+                        nextKeyEl.innerText = "Next: (Done)";
+                    } else {
+                        nextKeyEl.innerText = "Next: (New Loop)";
+                    }
+                }
+            }
+        }
+
+
+
+
+        /*
+        function updateDisplay() {
+            const showNext = document.getElementById('show-next-check').checked;
+            const playMode = document.getElementById('play-mode').value;
+            
+            currentKeyEl.innerText = currentPlaylist[currentIndex];
+            
+            if (showNext && currentIndex + 1 < currentPlaylist.length) {
+                nextKeyEl.innerText = "Next: " + currentPlaylist[currentIndex + 1];
+            } else if (showNext && currentIndex + 1 >= currentPlaylist.length) {
+                // Vis "New Loop" kun hvis vi faktisk teller runder (Automatic)
+                nextKeyEl.innerText = (playMode === 'manual') ? "Next: New round" : "Next: (New Loop)";
+            } else {
+                nextKeyEl.innerText = "";
+            }
+        }
+        */
+
+
+        /*
+        function updateDisplay() {
+            const showNext = document.getElementById('show-next-check').checked;
+            const playMode = document.getElementById('play-mode').value;
+            const maxLoops = parseInt(document.getElementById('loop-count').value);
+            
+            currentKeyEl.innerText = currentPlaylist[currentIndex];
+            
+            if (!showNext) {
+                nextKeyEl.innerText = "";
+                return;
+            }
+
+            // Hvis det er flere toner igjen i nåværende loop
+            if (currentIndex + 1 < currentPlaylist.length) {
+                nextKeyEl.innerText = "Next: " + currentPlaylist[currentIndex + 1];
+            } 
+            // Hvis vi er på siste tone i en loop
+            else {
+                if (playMode === 'manual') {
+                    nextKeyEl.innerText = "Next: New round";
+                } else {
+                    // Sjekk om dette er den aller siste loopen
+                    // (maxLoops !== 0 betyr at vi ikke kjører evig)
+                    if (maxLoops !== 0 && (currentLoopCount + 1) >= maxLoops) {
+                        nextKeyEl.innerText = "Next: (Done)";
+                    } else {
+                        nextKeyEl.innerText = "Next: (New Loop)";
+                    }
+                }
+            }
+        }
+        */
+
+
+
+
+        function startKeyTimer() {
+            clearInterval(progressInterval);
+            const duration = parseInt(document.getElementById('key-duration').value) * 1000;
+            const playMode = document.getElementById('play-mode').value;
+            
+            if (playMode === 'manual') {
+                progressBar.style.width = "0%";
+                return;
+            }
+
+            let start = Date.now();
+            if (isPaused && remainingTime > 0) {
+                start = Date.now() - (duration - remainingTime);
+            }
+
+            progressInterval = setInterval(() => {
+                if (isPaused) return;
+
+                const elapsed = Date.now() - start;
+                const percent = (elapsed / duration) * 100;
+                progressBar.style.width = Math.min(percent, 100) + "%";
+
+                if (percent >= 100) {
+                    clearInterval(progressInterval);
+                    nextKey();
+                }
+            }, 30);
+        }
+
+
+
+
+
+        function nextKey() {
+            const playMode = document.getElementById('play-mode').value;
+            const useSignal = document.getElementById('check-signal').checked;
+
+           // Spill av lyd hvis auto-modus og sjekkboks er på
+           if (playMode === 'auto' && useSignal) {
+               playChangeSignal();
+           }
+            
+            currentIndex++;
+            
+            if (currentIndex >= currentPlaylist.length) {
+                // Hvis vi er i manuell modus, driter vi i loop-count og bare fortsetter
+                if (playMode === 'manual') {
+                    currentIndex = 0;
+                    currentPlaylist = generateLoop();
+                } else {
+                    // Hvis vi er i automatisk modus, teller vi loops som vanlig
+                    currentLoopCount++;
+                    const maxLoops = parseInt(document.getElementById('loop-count').value);
+                    
+                    if (maxLoops !== 0 && currentLoopCount >= maxLoops) {
+                        stopTrainer();
+                        currentKeyEl.innerText = "DONE";
+                        return;
+                    }
+                    
+                    currentIndex = 0;
+                    currentPlaylist = generateLoop();
+                }
+            }
+            updateDisplay();
+            startKeyTimer();
+        }
+
+
+
+
+        function stopTrainer() {
+            clearInterval(progressInterval);
+            isPaused = false;
+            currentIndex = 0;
+            currentLoopCount = 0;
+            currentKeyEl.innerText = "READY";
+            nextKeyEl.innerText = "";
+            progressBar.style.width = "0%";
+            document.getElementById('pause-btn').innerText = "PAUSE";
+        }
+
+        // Event Listeners
+        document.getElementById('start-btn').onclick = () => {
+            stopTrainer();
+            currentPlaylist = generateLoop();
+            updateDisplay();
+            startKeyTimer();
+        };
+
+        document.getElementById('pause-btn').onclick = function() {
+            if (currentPlaylist.length === 0) return;
+            isPaused = !isPaused;
+            this.innerText = isPaused ? "CONTINUE" : "PAUSE";
+            
+            if (!isPaused) {
+                // Kalkuler resterende tid for å fortsette progresjonsbar
+                const currentWidth = parseFloat(progressBar.style.width);
+                const duration = parseInt(document.getElementById('key-duration').value) * 1000;
+                const elapsed = (currentWidth / 100) * duration;
+                const start = Date.now() - elapsed;
+                
+                // Start på nytt med korrigert starttid
+                clearInterval(progressInterval);
+                progressInterval = setInterval(() => {
+                    if (isPaused) return;
+                    const elap = Date.now() - start;
+                    const percent = (elap / duration) * 100;
+                    progressBar.style.width = Math.min(percent, 100) + "%";
+                    if (percent >= 100) {
+                        clearInterval(progressInterval);
+                        nextKey();
+                    }
+                }, 30);
+            }
+        };
+
+        document.getElementById('stop-btn').onclick = stopTrainer;
+        document.getElementById('next-btn').onclick = nextKey;
+
+        // Metronom Logikk
+        document.getElementById('metro-toggle').onclick = function() {
+            if (metroInterval) {
+                clearInterval(metroInterval);
+                metroInterval = null;
+                this.classList.remove('metro-active');
+            } else {
+                const bpm = parseInt(document.getElementById('metro-bpm').value);
+                const ms = 60000 / bpm;
+                metroInterval = setInterval(playTick, ms);
+                this.classList.add('metro-active');
+                // Trigger lyd med en gang for responsivitet
+                playTick();
+            }
+        };
+
+        document.getElementById('metro-bpm').oninput = function() {
+            document.getElementById('bpm-val').innerText = this.value + " BPM";
+            if (metroInterval) {
+                clearInterval(metroInterval);
+                const ms = 60000 / this.value;
+                metroInterval = setInterval(playTick, ms);
+            }
+        };
+
+
+        // SKALERING AV TEKST (Viktig!)
+        document.getElementById('font-size-ctrl').onchange = function() {
+            // Endrer font-størrelsen på BEHOLDEREN, ikke bare den ene teksten
+            keyDisplayArea.style.fontSize = this.value;
+        };
+
+
+
+
+    </script>
+</body>
+</html>
