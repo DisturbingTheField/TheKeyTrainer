@@ -296,30 +296,29 @@
 
         let audioInitialized = false;
 
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
 
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-
-            audioInitialized = true;
-        }
-
-
+    if (audioCtx.state === 'suspended') {
+        return audioCtx.resume().then(() => {
+            audioInitialized = true; // Viktig!
+        });
+    } else {
+        audioInitialized = true;
+        return Promise.resolve();
+    }
+}
 
         // NOTE! Google Chrome may give warning or no sound if HTML file in run from local disk, run app from GitHub URL or edit Google Chrome settings to enable audio from local HTML file
         // Metronom lyd (Sinuskurve 30ms)
 
 
+
+
 function playTick() {
     if (!audioInitialized || !audioCtx) return;
-
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
 
     const vol = document.getElementById('metro-vol').value / 100;
 
@@ -341,14 +340,8 @@ function playTick() {
 
 
 
-
-
 function playChangeSignal() {
     if (!audioInitialized || !audioCtx) return;
-
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
 
     const vol = document.getElementById('metro-vol').value / 100;
 
@@ -366,6 +359,7 @@ function playChangeSignal() {
     osc.start();
     osc.stop(audioCtx.currentTime + 0.5);
 }
+
 
 
         function generateLoop() {
@@ -533,15 +527,17 @@ function playChangeSignal() {
 
 
 
-        // Event Listeners
-        document.getElementById('start-btn').onclick = () => {
-            initAudio();
-            stopTrainer();
-            currentPlaylist = generateLoop();
-            updateDisplay();
-            startKeyTimer();
-        };
+  
 
+document.getElementById('start-btn').onclick = () => {
+    // Vent på at AudioContext er aktiv før vi starter treningsloop
+    initAudio().then(() => {
+        stopTrainer();
+        currentPlaylist = generateLoop();
+        updateDisplay();
+        startKeyTimer(); // Her kan playChangeSignal() og andre lydfunksjoner kalles trygt
+    });
+};
 
         document.getElementById('pause-btn').onclick = function() {
             if (currentPlaylist.length === 0) return;
@@ -575,23 +571,28 @@ function playChangeSignal() {
 
 
 
-        // Metronom Logikk
-        document.getElementById('metro-toggle').onclick = function() {
-            initAudio(); 
-            if (metroInterval) {
-                clearInterval(metroInterval);
-                metroInterval = null;
-                this.classList.remove('metro-active');
-            } else {
-                const bpm = parseInt(document.getElementById('metro-bpm').value);
-                const ms = 60000 / bpm;
-                metroInterval = setInterval(playTick, ms);
-                this.classList.add('metro-active');
-                // Trigger lyd med en gang for responsivitet
-                playTick();
-            }
-        };
+ 
 
+document.getElementById('metro-toggle').onclick = function() {
+    // Sørg for at AudioContext er aktiv før vi starter metronomen
+    initAudio().then(() => {
+        if (metroInterval) {
+            clearInterval(metroInterval);
+            metroInterval = null;
+            this.classList.remove('metro-active');
+        } else {
+            const bpm = parseInt(document.getElementById('metro-bpm').value);
+            const ms = 60000 / bpm;
+
+            // Start interval for ticks
+            metroInterval = setInterval(playTick, ms);
+            this.classList.add('metro-active');
+
+            // Spill første tick etter at AudioContext er klar
+            playTick();
+        }
+    });
+};
 
 
         document.getElementById('metro-bpm').oninput = function() {
