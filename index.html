@@ -297,14 +297,39 @@
         let audioInitialized = false;
 
 
+// Init AudioContext og lås opp lyd for iOS
+async function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+    }
+
+    // Spill en minimal lyd for å "unlock" AudioContext på iOS
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.value = 1000;
+    gain.gain.value = 0.001;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.01);
+
+    audioInitialized = true;
+}
+
+
+
         // NOTE! Google Chrome may give warning or no sound if HTML file in run from local disk, run app from GitHub URL or edit Google Chrome settings to enable audio from local HTML file
         // Metronom lyd (Sinuskurve 30ms)
 
+// Metronom lyd
 function playTick() {
     if (!audioInitialized || !audioCtx) return;
 
     const vol = document.getElementById('metro-vol').value / 100;
-
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
 
@@ -317,17 +342,17 @@ function playTick() {
     osc.connect(gain);
     gain.connect(audioCtx.destination);
 
-    osc.start();
+    osc.start(audioCtx.currentTime);
     osc.stop(audioCtx.currentTime + 0.08);
 }
 
 
 
+// Signal ved key change
 function playChangeSignal() {
     if (!audioInitialized || !audioCtx) return;
 
     const vol = document.getElementById('metro-vol').value / 100;
-
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
 
@@ -339,7 +364,7 @@ function playChangeSignal() {
     osc.connect(gain);
     gain.connect(audioCtx.destination);
 
-    osc.start();
+    osc.start(audioCtx.currentTime);
     osc.stop(audioCtx.currentTime + 0.5);
 }
 
@@ -514,19 +539,7 @@ function playChangeSignal() {
 
 // START KNAPP
 document.getElementById('start-btn').onclick = async () => {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
-    audioInitialized = true;
-
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.frequency.value = 1000;
-    gain.gain.value = 0.001; // minimal lyd, hører nesten ingenting
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.01);
+    await initAudio();
 
     stopTrainer();
     currentPlaylist = generateLoop();
@@ -573,19 +586,7 @@ document.getElementById('start-btn').onclick = async () => {
 
 // METRONOM KNAPP
 document.getElementById('metro-toggle').onclick = async function() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
-    audioInitialized = true;
-
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.frequency.value = 1000;
-    gain.gain.value = 0.001;
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.01);
+    await initAudio();
 
     if (metroInterval) {
         clearInterval(metroInterval);
@@ -593,24 +594,44 @@ document.getElementById('metro-toggle').onclick = async function() {
         this.classList.remove('metro-active');
     } else {
         const bpm = parseInt(document.getElementById('metro-bpm').value);
-        const ms = 60000 / bpm;
+        const intervalMs = 60000 / bpm;
 
-        metroInterval = setInterval(playTick, ms);
+        // Scheduler pattern: planlegger neste tick
+        let nextTime = audioCtx.currentTime;
+        function scheduler() {
+            playTick();
+            nextTime += intervalMs / 1000;
+            const delay = (nextTime - audioCtx.currentTime) * 1000;
+            metroInterval = setTimeout(scheduler, delay);
+        }
+        scheduler();
+
         this.classList.add('metro-active');
-
-        // Spill første tick direkte
-        playTick();
     }
 };
 
-        document.getElementById('metro-bpm').oninput = function() {
-            document.getElementById('bpm-val').innerText = this.value + " BPM";
-            if (metroInterval) {
-                clearInterval(metroInterval);
-                const ms = 60000 / this.value;
-                metroInterval = setInterval(playTick, ms);
-            }
-        };
+
+
+// BPM slider oppdatering
+document.getElementById('metro-bpm').oninput = function() {
+    document.getElementById('bpm-val').innerText = this.value + " BPM";
+    if (metroInterval) {
+        clearTimeout(metroInterval);
+        metroInterval = null;
+
+        const bpm = parseInt(this.value);
+        const intervalMs = 60000 / bpm;
+
+        let nextTime = audioCtx.currentTime;
+        function scheduler() {
+            playTick();
+            nextTime += intervalMs / 1000;
+            const delay = (nextTime - audioCtx.currentTime) * 1000;
+            metroInterval = setTimeout(scheduler, delay);
+        }
+        scheduler();
+    }
+};
 
 
         // SKALERING AV TEKST (Viktig!)
