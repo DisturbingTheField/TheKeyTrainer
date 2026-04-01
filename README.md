@@ -51,6 +51,17 @@ Even though the app displays "Maj", "Min", or "Dom", you are free to use these p
 
 ---
 
+## 📱 Special Note for iPhone (iOS) Users
+
+If you are using the app on an iPhone and cannot hear the metronome or the key-change signal:
+
+> [!IMPORTANT]
+> **Check the Silent Switch:** On iPhone, the physical "Silent/Mute" switch on the side of the device **must be turned OFF** (no red showing). 
+> * Even if your volume is turned up for music or videos, iOS often blocks "Web Audio" (like this metronome) if the silent switch is active.
+> * If you still don't hear anything, try refreshing the page in Safari and ensure your volume is turned up.
+
+---
+
 ## 🛠 Technology
 
 * **HTML5 / CSS3**

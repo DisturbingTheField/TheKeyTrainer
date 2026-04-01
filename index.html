@@ -38,7 +38,7 @@
         }
 
         header h1 {
-            font-size: 2.4rem;
+            font-size: 1.4rem;
             text-align: center;
             color: var(--primary);
             margin: 0 0 20px 0;
@@ -190,7 +190,7 @@
             <div class="main-buttons">
                 <button id="start-btn">START LOOP</button>
                 <button id="pause-btn">PAUSE</button>
-                <button id="stop-btn">STOPP</button>
+                <button id="stop-btn">STOP</button>
                 <button id="next-btn">NEXT KEY</button>
             </div>
 
@@ -484,40 +484,44 @@ function playChangeSignal() {
 
 
 
-        function nextKey() {
-            const playMode = document.getElementById('play-mode').value;
-            const useSignal = document.getElementById('check-signal').checked;
 
-           // Spill av lyd hvis auto-modus og sjekkboks er på
-           if (playMode === 'auto' && useSignal) {
-               playChangeSignal();
-           }
-            
-            currentIndex++;
-            
-            if (currentIndex >= currentPlaylist.length) {
-                // Hvis vi er i manuell modus, driter vi i loop-count og bare fortsetter
-                if (playMode === 'manual') {
-                    currentIndex = 0;
-                    currentPlaylist = generateLoop();
-                } else {
-                    // Hvis vi er i automatisk modus, teller vi loops som vanlig
-                    currentLoopCount++;
-                    const maxLoops = parseInt(document.getElementById('loop-count').value);
-                    
-                    if (maxLoops !== 0 && currentLoopCount >= maxLoops) {
-                        stopTrainer();
-                        currentKeyEl.innerText = "DONE";
-                        return;
-                    }
-                    
-                    currentIndex = 0;
-                    currentPlaylist = generateLoop();
-                }
+function nextKey() {
+    const playMode = document.getElementById('play-mode').value;
+    const useSignal = document.getElementById('check-signal').checked;
+
+    if (currentPlaylist.length === 0) {
+        currentPlaylist = generateLoop();
+        currentIndex = -1;    }
+
+    currentIndex++;
+
+    if (currentIndex >= currentPlaylist.length) {
+        if (playMode === 'manual') {
+            currentPlaylist = generateLoop();
+            currentIndex = 0;
+        } else {
+            currentLoopCount++;
+            const maxLoops = parseInt(document.getElementById('loop-count').value);
+
+            if (maxLoops !== 0 && currentLoopCount >= maxLoops) {
+                stopTrainer();
+                currentKeyEl.innerText = "DONE";
+                return;
             }
-            updateDisplay();
-            startKeyTimer();
+
+            currentPlaylist = generateLoop();
+            currentIndex = 0;
         }
+    }
+
+    updateDisplay();
+
+    if (playMode === 'auto' && useSignal) {
+        playChangeSignal();
+    }
+
+    startKeyTimer();
+}
 
 
 
@@ -526,6 +530,7 @@ function playChangeSignal() {
             clearInterval(progressInterval);
             isPaused = false;
             currentIndex = 0;
+            currentPlaylist = [];
             currentLoopCount = 0;
             currentKeyEl.innerText = "READY";
             nextKeyEl.innerText = "";
@@ -542,11 +547,12 @@ document.getElementById('start-btn').onclick = async () => {
     await initAudio();
 
     stopTrainer();
-    currentPlaylist = generateLoop();
-    updateDisplay();
-    startKeyTimer();
-};
 
+    currentPlaylist = generateLoop();
+    currentIndex = -1;
+
+    nextKey();
+};
 
 
 
