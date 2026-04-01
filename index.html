@@ -5,6 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="favicon.png">
     <title>THE KEY TRAINER</title>
     <style>
         :root {
@@ -293,47 +294,71 @@
 
 
 
+        let audioInitialized = false;
 
-        // NOTE! Google Chrome may give warning or no sound if HTML file in run from local disk, run app from GitHub URL or edit Google Chrome settings to enable audio from local HTML file
-        // Metronom lyd (Sinuskurve 30ms)
-        function playTick() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
 
-            const vol = document.getElementById('metro-vol').value / 100;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
 
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(1000, audioCtx.currentTime); // Høyere tone for tydelighet
-            
-            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
-
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.03);
+            audioInitialized = true;
         }
 
 
 
-function playChangeSignal() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+        // NOTE! Google Chrome may give warning or no sound if HTML file in run from local disk, run app from GitHub URL or edit Google Chrome settings to enable audio from local HTML file
+        // Metronom lyd (Sinuskurve 30ms)
+
+
+function playTick() {
+    if (!audioInitialized || !audioCtx) return;
+
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
 
     const vol = document.getElementById('metro-vol').value / 100;
+
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
 
     osc.type = 'sine';
-    // 1200 Hz er litt lysere enn metronomen (1000 Hz)
-    osc.frequency.setValueAtTime(1200, audioCtx.currentTime); 
-    
+    osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+
     gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-    // Lydvarighet på 0.5 sekund (500ms) for å skille den fra metronomen
-    gain.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.5);
+    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.08);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.08);
+}
+
+
+
+
+
+function playChangeSignal() {
+    if (!audioInitialized || !audioCtx) return;
+
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+
+    const vol = document.getElementById('metro-vol').value / 100;
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
 
     osc.connect(gain);
     gain.connect(audioCtx.destination);
@@ -506,13 +531,17 @@ function playChangeSignal() {
             document.getElementById('pause-btn').innerText = "PAUSE";
         }
 
+
+
         // Event Listeners
         document.getElementById('start-btn').onclick = () => {
+            initAudio();
             stopTrainer();
             currentPlaylist = generateLoop();
             updateDisplay();
             startKeyTimer();
         };
+
 
         document.getElementById('pause-btn').onclick = function() {
             if (currentPlaylist.length === 0) return;
@@ -544,8 +573,11 @@ function playChangeSignal() {
         document.getElementById('stop-btn').onclick = stopTrainer;
         document.getElementById('next-btn').onclick = nextKey;
 
+
+
         // Metronom Logikk
         document.getElementById('metro-toggle').onclick = function() {
+            initAudio(); 
             if (metroInterval) {
                 clearInterval(metroInterval);
                 metroInterval = null;
@@ -559,6 +591,8 @@ function playChangeSignal() {
                 playTick();
             }
         };
+
+
 
         document.getElementById('metro-bpm').oninput = function() {
             document.getElementById('bpm-val').innerText = this.value + " BPM";
